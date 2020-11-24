@@ -57,7 +57,8 @@ static void MX_TIM3_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-int poc;
+int poc=0;
+int smer=0;
 /* USER CODE END 0 */
 
 /**

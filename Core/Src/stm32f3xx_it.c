@@ -23,6 +23,7 @@
 #include "stm32f3xx_it.h"
 
 extern int poc;
+extern int smer;
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -206,8 +207,12 @@ void TIM3_IRQHandler(void)
 {
  	if(LL_TIM_IsActiveFlag_UPDATE(TIM3)){
 
- 		if(poc==99)poc=0;
-		poc++;
+ 		if(poc==99)smer=0;
+ 		if(poc==0)smer=1;
+
+ 		if(smer==1)poc++;
+ 		if(smer==0)poc--;
+
 		setDutyCycle(poc);
 
 
