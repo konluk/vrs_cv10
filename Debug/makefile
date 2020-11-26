@@ -30,24 +30,24 @@ endif
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-test.elf \
+cv10.elf \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-test.list \
+cv10.list \
 
 OBJCOPY_BIN += \
-test.bin \
+cv10.bin \
 
 
 # All Target
-all: test.elf secondary-outputs
+all: cv10.elf secondary-outputs
 
 # Tool invocations
-test.elf: $(OBJS) $(USER_OBJS) C:\STM_TEST\test\STM32F303K8TX_FLASH.ld
-	arm-none-eabi-gcc -o "test.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\STM_TEST\test\STM32F303K8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="test.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+cv10.elf: $(OBJS) $(USER_OBJS) D:\skola\VRS\cv10\STM32F303K8TX_FLASH.ld
+	arm-none-eabi-gcc -o "cv10.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"D:\skola\VRS\cv10\STM32F303K8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="cv10.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -56,13 +56,13 @@ default.size.stdout: $(EXECUTABLES)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-test.list: $(EXECUTABLES)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "test.list"
+cv10.list: $(EXECUTABLES)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "cv10.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
-test.bin: $(EXECUTABLES)
-	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "test.bin"
+cv10.bin: $(EXECUTABLES)
+	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "cv10.bin"
 	@echo 'Finished building: $@'
 	@echo ' '
 

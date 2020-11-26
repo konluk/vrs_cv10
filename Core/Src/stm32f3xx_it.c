@@ -21,11 +21,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f3xx_it.h"
-
-extern int poc;
-extern int smer;
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "led_fade.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,7 +57,7 @@ extern int smer;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern TIM_HandleTypeDef htim3;
+
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -187,7 +185,7 @@ void SysTick_Handler(void)
   /* USER CODE BEGIN SysTick_IRQn 0 */
 
   /* USER CODE END SysTick_IRQn 0 */
-  HAL_IncTick();
+
   /* USER CODE BEGIN SysTick_IRQn 1 */
 
   /* USER CODE END SysTick_IRQn 1 */
@@ -201,25 +199,80 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief This function handles TIM3 global interrupt.
+  * @brief This function handles DMA1 channel6 global interrupt.
   */
-void TIM3_IRQHandler(void)
+void DMA1_Channel6_IRQHandler(void)
 {
- 	if(LL_TIM_IsActiveFlag_UPDATE(TIM3)){
+  /* USER CODE BEGIN DMA1_Channel6_IRQn 0 */
 
- 		if(poc==99)smer=0;
- 		if(poc==0)smer=1;
+	if(LL_DMA_IsActiveFlag_TC6(DMA1) == SET)
+	{
+		USART2_CheckDmaReception();
+		LL_DMA_ClearFlag_TC6(DMA1);
+	}
 
- 		if(smer==1)poc++;
- 		if(smer==0)poc--;
+  /* USER CODE END DMA1_Channel6_IRQn 0 */
 
-		setDutyCycle(poc);
+  /* USER CODE BEGIN DMA1_Channel6_IRQn 1 */
 
+  /* USER CODE END DMA1_Channel6_IRQn 1 */
+}
 
+/**
+  * @brief This function handles DMA1 channel7 global interrupt.
+  */
+void DMA1_Channel7_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Channel7_IRQn 0 */
+	if(LL_DMA_IsActiveFlag_TC7(DMA1) == SET)
+	{
+		LL_DMA_ClearFlag_TC7(DMA1);
 
- 	}
-	LL_TIM_ClearFlag_UPDATE(TIM3);
+		while(LL_USART_IsActiveFlag_TC(USART2) == RESET);
+		LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_7);
+	}
 
+  /* USER CODE END DMA1_Channel7_IRQn 0 */
+
+  /* USER CODE BEGIN DMA1_Channel7_IRQn 1 */
+
+  /* USER CODE END DMA1_Channel7_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM2 global interrupt.
+  */
+void TIM2_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM2_IRQn 0 */
+	if(LL_TIM_IsActiveFlag_UPDATE(TIM2)) {
+		// set next pulse width
+		fade_tick((LedFadeState*)&led_fade_state);
+		LL_TIM_ClearFlag_UPDATE(TIM2);
+	}
+
+  /* USER CODE END TIM2_IRQn 0 */
+  /* USER CODE BEGIN TIM2_IRQn 1 */
+
+  /* USER CODE END TIM2_IRQn 1 */
+}
+
+/**
+  * @brief This function handles USART2 global interrupt / USART2 wake-up interrupt through EXT line 26.
+  */
+void USART2_IRQHandler(void)
+{
+  /* USER CODE BEGIN USART2_IRQn 0 */
+	if(LL_USART_IsActiveFlag_IDLE(USART2))
+	{
+		USART2_CheckDmaReception();
+		LL_USART_ClearFlag_IDLE(USART2);
+	}
+
+  /* USER CODE END USART2_IRQn 0 */
+  /* USER CODE BEGIN USART2_IRQn 1 */
+
+  /* USER CODE END USART2_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

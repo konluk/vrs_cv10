@@ -9,41 +9,41 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
   2 .rodata       00000018  080024dc  080024dc  000124dc  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  3 .ARM.extab    00000000  080024f4  080024f4  0002000c  2**0
+  3 .ARM.extab    00000000  080024f4  080024f4  00020010  2**0
                   CONTENTS
-  4 .ARM          00000000  080024f4  080024f4  0002000c  2**0
+  4 .ARM          00000000  080024f4  080024f4  00020010  2**0
                   CONTENTS
-  5 .preinit_array 00000000  080024f4  080024f4  0002000c  2**0
+  5 .preinit_array 00000000  080024f4  080024f4  00020010  2**0
                   CONTENTS, ALLOC, LOAD, DATA
   6 .init_array   00000004  080024f4  080024f4  000124f4  2**2
                   CONTENTS, ALLOC, LOAD, DATA
   7 .fini_array   00000004  080024f8  080024f8  000124f8  2**2
                   CONTENTS, ALLOC, LOAD, DATA
-  8 .data         0000000c  20000000  080024fc  00020000  2**2
+  8 .data         00000010  20000000  080024fc  00020000  2**2
                   CONTENTS, ALLOC, LOAD, DATA
-  9 .bss          00000068  2000000c  08002508  0002000c  2**2
+  9 .bss          00000064  20000010  0800250c  00020010  2**2
                   ALLOC
- 10 ._user_heap_stack 00000604  20000074  08002508  00020074  2**0
+ 10 ._user_heap_stack 00000604  20000074  0800250c  00020074  2**0
                   ALLOC
- 11 .ARM.attributes 00000030  00000000  00000000  0002000c  2**0
+ 11 .ARM.attributes 00000030  00000000  00000000  00020010  2**0
                   CONTENTS, READONLY
- 12 .debug_info   00009150  00000000  00000000  0002003c  2**0
+ 12 .debug_info   00009150  00000000  00000000  00020040  2**0
                   CONTENTS, READONLY, DEBUGGING
- 13 .debug_abbrev 000016c3  00000000  00000000  0002918c  2**0
+ 13 .debug_abbrev 000016c3  00000000  00000000  00029190  2**0
                   CONTENTS, READONLY, DEBUGGING
- 14 .debug_aranges 00000bb0  00000000  00000000  0002a850  2**3
+ 14 .debug_aranges 00000bb0  00000000  00000000  0002a858  2**3
                   CONTENTS, READONLY, DEBUGGING
- 15 .debug_ranges 00000af8  00000000  00000000  0002b400  2**3
+ 15 .debug_ranges 00000af8  00000000  00000000  0002b408  2**3
                   CONTENTS, READONLY, DEBUGGING
- 16 .debug_macro  00018905  00000000  00000000  0002bef8  2**0
+ 16 .debug_macro  00018905  00000000  00000000  0002bf00  2**0
                   CONTENTS, READONLY, DEBUGGING
- 17 .debug_line   00007734  00000000  00000000  000447fd  2**0
+ 17 .debug_line   0000783c  00000000  00000000  00044805  2**0
                   CONTENTS, READONLY, DEBUGGING
- 18 .debug_str    0008e875  00000000  00000000  0004bf31  2**0
+ 18 .debug_str    0008e883  00000000  00000000  0004c041  2**0
                   CONTENTS, READONLY, DEBUGGING
- 19 .comment      0000007b  00000000  00000000  000da7a6  2**0
+ 19 .comment      0000007b  00000000  00000000  000da8c4  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  0000317c  00000000  00000000  000da824  2**2
+ 20 .debug_frame  0000317c  00000000  00000000  000da940  2**2
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -60,7 +60,7 @@ Disassembly of section .text:
  800019a:	2301      	movs	r3, #1
  800019c:	7023      	strb	r3, [r4, #0]
  800019e:	bd10      	pop	{r4, pc}
- 80001a0:	2000000c 	.word	0x2000000c
+ 80001a0:	20000010 	.word	0x20000010
  80001a4:	00000000 	.word	0x00000000
  80001a8:	080024c4 	.word	0x080024c4
 
@@ -73,7 +73,7 @@ Disassembly of section .text:
  80001b6:	f3af 8000 	nop.w
  80001ba:	bd08      	pop	{r3, pc}
  80001bc:	00000000 	.word	0x00000000
- 80001c0:	20000010 	.word	0x20000010
+ 80001c0:	20000014 	.word	0x20000014
  80001c4:	080024c4 	.word	0x080024c4
 
 080001c8 <LL_RCC_HSI_Enable>:
@@ -858,7 +858,7 @@ int main(void)
   while (1)
  8000640:	e7fe      	b.n	8000640 <main+0x44>
  8000642:	bf00      	nop
- 8000644:	20000028 	.word	0x20000028
+ 8000644:	20000000 	.word	0x20000000
  8000648:	40000400 	.word	0x40000400
 
 0800064c <setDutyCycle>:
@@ -1733,7 +1733,7 @@ void TIM3_IRQHandler(void)
  8000aac:	bf00      	nop
  8000aae:	bd80      	pop	{r7, pc}
  8000ab0:	40000400 	.word	0x40000400
- 8000ab4:	20000028 	.word	0x20000028
+ 8000ab4:	20000000 	.word	0x20000000
  8000ab8:	2000002c 	.word	0x2000002c
 
 08000abc <SystemInit>:
@@ -1856,9 +1856,9 @@ LoopForever:
 	ldr	r0, =_sdata
  8000b28:	20000000 	.word	0x20000000
 	ldr	r3, =_edata
- 8000b2c:	2000000c 	.word	0x2000000c
+ 8000b2c:	20000010 	.word	0x20000010
 	ldr	r2, =_sbss
- 8000b30:	2000000c 	.word	0x2000000c
+ 8000b30:	20000010 	.word	0x20000010
 	ldr	r3, = _ebss
  8000b34:	20000074 	.word	0x20000074
 
@@ -1976,9 +1976,9 @@ __weak HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
  8000bb6:	3708      	adds	r7, #8
  8000bb8:	46bd      	mov	sp, r7
  8000bba:	bd80      	pop	{r7, pc}
- 8000bbc:	20000000 	.word	0x20000000
- 8000bc0:	20000008 	.word	0x20000008
- 8000bc4:	20000004 	.word	0x20000004
+ 8000bbc:	20000004 	.word	0x20000004
+ 8000bc0:	2000000c 	.word	0x2000000c
+ 8000bc4:	20000008 	.word	0x20000008
 
 08000bc8 <HAL_IncTick>:
   * @note This function is declared as __weak to be overwritten in case of other 
@@ -2004,7 +2004,7 @@ __weak void HAL_IncTick(void)
  8000be0:	f85d 7b04 	ldr.w	r7, [sp], #4
  8000be4:	4770      	bx	lr
  8000be6:	bf00      	nop
- 8000be8:	20000008 	.word	0x20000008
+ 8000be8:	2000000c 	.word	0x2000000c
  8000bec:	20000070 	.word	0x20000070
 
 08000bf0 <__NVIC_SetPriorityGrouping>:
@@ -6392,7 +6392,7 @@ void LL_SetSystemCoreClock(uint32_t HCLKFrequency)
  8002460:	f85d 7b04 	ldr.w	r7, [sp], #4
  8002464:	4770      	bx	lr
  8002466:	bf00      	nop
- 8002468:	20000000 	.word	0x20000000
+ 8002468:	20000004 	.word	0x20000004
 
 0800246c <__libc_init_array>:
  800246c:	b570      	push	{r4, r5, r6, lr}

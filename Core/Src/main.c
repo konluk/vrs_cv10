@@ -19,9 +19,18 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dma.h"
+#include "tim.h"
+#include "usart.h"
+#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+#include "led_fade.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /* USER CODE END Includes */
 
@@ -32,6 +41,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define BUFF_SZ		40		// Size of command buffer
+#define MSG_BUFF_SZ  150	// buffer to send from main
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -40,25 +51,24 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-TIM_HandleTypeDef htim3;
 
 /* USER CODE BEGIN PV */
+
+volatile uint16_t dma_occupied = 0;				// remaining space in DMA buffer
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_TIM2_Init(void);
-static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
+
+void proccesDmaData(uint8_t sign);		// callback to process one character of data
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-int poc=0;
-int smer=0;
+
 /* USER CODE END 0 */
 
 /**
@@ -74,7 +84,13 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+
+  LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
+  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+
+  NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+
+  /* System interrupt init*/
 
   /* USER CODE BEGIN Init */
 
@@ -89,34 +105,43 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
+  MX_USART2_UART_Init();
   MX_TIM2_Init();
-  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
+  // init USART
+  USART2_RegisterCallback(proccesDmaData);
+  DMA_init_for_USART2();
+
+  // init global led fade state
+  fade_init((LedFadeState*)&led_fade_state);
+
+  //init timer
+  LL_TIM_ClearFlag_UPDATE(TIM2);	//set by init function
+  set_duty_cycle(0);				//initial PWM value
+  LL_TIM_CC_EnableChannel(TIM2, LL_TIM_CHANNEL_CH1);	//enable PWM channels
+  LL_TIM_EnableAllOutputs(TIM2);		//enable outputs
+  LL_TIM_EnableIT_UPDATE(TIM2);			//enable update interrupt
+  LL_TIM_EnableCounter(TIM2);			//enable timer
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  uint8_t buff[MSG_BUFF_SZ];
+  memset(buff, 0, MSG_BUFF_SZ);		// create buffer and set all to 0
 
-  LL_TIM_EnableCounter(TIM2);
-  LL_TIM_CC_EnableChannel(TIM2, LL_TIM_CHANNEL_CH1);
-   LL_TIM_OC_SetCompareCH1(TIM2, poc);
-
-  LL_TIM_EnableCounter(TIM3);
-  LL_TIM_EnableIT_UPDATE(TIM3);
 
   while (1)
   {
+
+	LL_mDelay(200);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
-}
-
-void setDutyCycle(uint8_t D){
-
-	LL_TIM_OC_SetCompareCH1(TIM2, D);
 }
 
 /**
@@ -147,159 +172,61 @@ void SystemClock_Config(void)
   {
 
   }
+  LL_Init1msTick(8000000);
   LL_SetSystemCoreClock(8000000);
-
-   /* Update the time base */
-  if (HAL_InitTick (TICK_INT_PRIORITY) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
-
-/**
-  * @brief TIM2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM2_Init(void)
-{
-
-  /* USER CODE BEGIN TIM2_Init 0 */
-
-  /* USER CODE END TIM2_Init 0 */
-
-  LL_TIM_InitTypeDef TIM_InitStruct = {0};
-  LL_TIM_OC_InitTypeDef TIM_OC_InitStruct = {0};
-
-  LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-  /* Peripheral clock enable */
-  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM2);
-
-  /* USER CODE BEGIN TIM2_Init 1 */
-
-  /* USER CODE END TIM2_Init 1 */
-  TIM_InitStruct.Prescaler = 799;
-  TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
-  TIM_InitStruct.Autoreload = 99;
-  TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
-  LL_TIM_Init(TIM2, &TIM_InitStruct);
-  LL_TIM_DisableARRPreload(TIM2);
-  LL_TIM_SetClockSource(TIM2, LL_TIM_CLOCKSOURCE_INTERNAL);
-  LL_TIM_OC_EnablePreload(TIM2, LL_TIM_CHANNEL_CH1);
-  TIM_OC_InitStruct.OCMode = LL_TIM_OCMODE_PWM1;
-  TIM_OC_InitStruct.OCState = LL_TIM_OCSTATE_DISABLE;
-  TIM_OC_InitStruct.OCNState = LL_TIM_OCSTATE_DISABLE;
-  TIM_OC_InitStruct.CompareValue = 0;
-  TIM_OC_InitStruct.OCPolarity = LL_TIM_OCPOLARITY_HIGH;
-  LL_TIM_OC_Init(TIM2, LL_TIM_CHANNEL_CH1, &TIM_OC_InitStruct);
-  LL_TIM_OC_DisableFast(TIM2, LL_TIM_CHANNEL_CH1);
-  LL_TIM_SetTriggerOutput(TIM2, LL_TIM_TRGO_RESET);
-  LL_TIM_DisableMasterSlaveMode(TIM2);
-  /* USER CODE BEGIN TIM2_Init 2 */
-
-
-
-  /* USER CODE END TIM2_Init 2 */
-  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA);
-  /**TIM2 GPIO Configuration
-  PA5   ------> TIM2_CH1
-  */
-  GPIO_InitStruct.Pin = LL_GPIO_PIN_5;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  GPIO_InitStruct.Alternate = LL_GPIO_AF_1;
-  LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-}
-
-/**
-  * @brief TIM3 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM3_Init(void)
-{
-
-  /* USER CODE BEGIN TIM3_Init 0 */
-
-  /* USER CODE END TIM3_Init 0 */
-
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
-
-  /* USER CODE BEGIN TIM3_Init 1 */
-
-  /* USER CODE END TIM3_Init 1 */
-  htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 7999;
-  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 9;
-  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_OC_Init(&htim3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigOC.OCMode = TIM_OCMODE_ACTIVE;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_OC_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM3_Init 2 */
-
-  /* USER CODE END TIM3_Init 2 */
-
-}
-
-/**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_GPIO_Init(void)
-{
-  LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-  /* GPIO Ports Clock Enable */
-  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA);
-  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOB);
-
-  /**/
-  LL_GPIO_ResetOutputPin(Led_GPIO_Port, Led_Pin);
-
-  /**/
-  GPIO_InitStruct.Pin = Led_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(Led_GPIO_Port, &GPIO_InitStruct);
-
 }
 
 /* USER CODE BEGIN 4 */
+
+void processCmd(uint8_t *buff, uint16_t len) {
+	if(strcmp(buff, "manual") == 0) {
+		fade_manual((LedFadeState*)&led_fade_state);
+	}
+	else if(strncmp(buff, "PWM", 3) == 0) {	// compare only first 3 characters
+		int t = atol(buff + 3);	// get number from command
+		fade_set_target((LedFadeState*)&led_fade_state, (uint8_t)t);
+	}
+	else if(strcmp(buff, "auto") == 0) {
+		fade_auto((LedFadeState*)&led_fade_state);
+	}
+}
+
+// ignore or keep processing
+typedef enum STATES_ {
+	RECEIVING,
+	IGNORING
+}STATES;
+
+void proccesDmaData(uint8_t sign)
+{
+	/* Process received data */
+	static uint8_t buffer[BUFF_SZ];		//receive buffer
+	static uint16_t ind = 0;			//current position
+	static STATES state_machine = IGNORING;
+
+	// check for overflow
+	if(ind >= BUFF_SZ) {
+		state_machine = IGNORING;
+		ind = 0;
+	}
+
+	// start and ending '$' is not saved to buffer
+	if(sign == '$' && state_machine != RECEIVING) {
+		// upon receive of '$', start saving the characters
+		state_machine = RECEIVING;
+		memset(buffer, 0, BUFF_SZ);
+		ind = 0;
+	}
+	else if((sign == '$' && state_machine == RECEIVING)) {
+		// terminating '$', ignore rest of chars, process the commands
+		state_machine = IGNORING;
+		processCmd(buffer, ind);
+	}
+	else if(state_machine == RECEIVING) {
+		// if in state RECEIVING, save to buffer, note: also saves begin/end characters
+		buffer[ind++] = sign;
+	}
+}
 
 /* USER CODE END 4 */
 

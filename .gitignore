@@ -1,0 +1,6 @@
+.settings
+.settings/
+.settings/*
+.settings/*.*
+/Debug/
+/Release/
